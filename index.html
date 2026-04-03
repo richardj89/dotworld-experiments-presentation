@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DotWorld Experiments - Galactic Gather</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg-dark: #0a0a0f;
+    --bg-card: #13131a;
+    --bg-card-hover: #1a1a24;
+    --accent: #6c5ce7;
+    --accent-light: #a29bfe;
+    --accent-glow: rgba(108, 92, 231, 0.3);
+    --green: #00e676;
+    --green-bg: rgba(0, 230, 118, 0.1);
+    --orange: #ff9100;
+    --orange-bg: rgba(255, 145, 0, 0.1);
+    --red: #ff5252;
+    --red-bg: rgba(255, 82, 82, 0.1);
+    --text: #e8e8f0;
+    --text-muted: #8888a0;
+    --text-dim: #555568;
+    --border: rgba(255,255,255,0.06);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* Slide container */
+  .deck {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 80px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+  }
+
+  .slide.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .slide.active .animate {
+    animation: fadeUp 0.6s ease forwards;
+  }
+
+  .slide.active .animate:nth-child(1) { animation-delay: 0.1s; }
+  .slide.active .animate:nth-child(2) { animation-delay: 0.2s; }
+  .slide.active .animate:nth-child(3) { animation-delay: 0.3s; }
+  .slide.active .animate:nth-child(4) { animation-delay: 0.4s; }
+  .slide.active .animate:nth-child(5) { animation-delay: 0.5s; }
+  .slide.active .animate:nth-child(6) { animation-delay: 0.6s; }
+  .slide.active .animate:nth-child(7) { animation-delay: 0.7s; }
+  .slide.active .animate:nth-child(8) { animation-delay: 0.8s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate { opacity: 0; }
+
+  /* Background effects */
+  .bg-gradient {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.15;
+    pointer-events: none;
+  }
+
+  .bg-gradient.purple { background: var(--accent); top: -200px; right: -100px; }
+  .bg-gradient.blue { background: #4facfe; bottom: -200px; left: -100px; }
+  .bg-gradient.green-bg { background: var(--green); top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.08; }
+
+  /* Typography */
+  .slide-label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent-light);
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-size: 72px;
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    max-width: 900px;
+    text-align: center;
+  }
+
+  h1 .highlight {
+    background: linear-gradient(135deg, var(--accent-light), #4facfe);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  h2 {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -1px;
+    max-width: 800px;
+  }
+
+  h3 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 22px;
+    color: var(--text-muted);
+    font-weight: 400;
+    max-width: 600px;
+    text-align: center;
+    line-height: 1.5;
+    margin-top: 20px;
+  }
+
+  .slide-content {
+    width: 100%;
+    max-width: 1100px;
+  }
+
+  /* Cards grid */
+  .cards {
+    display: grid;
+    gap: 20px;
+    margin-top: 40px;
+  }
+
+  .cards-3 { grid-template-columns: repeat(3, 1fr); }
+  .cards-2 { grid-template-columns: repeat(2, 1fr); }
+  .cards-4 { grid-template-columns: repeat(4, 1fr); }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    transition: all 0.3s ease;
+  }
+
+  .card:hover {
+    background: var(--bg-card-hover);
+    border-color: rgba(108, 92, 231, 0.2);
+    transform: translateY(-2px);
+  }
+
+  .card-icon {
+    font-size: 32px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .card h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .card p {
+    font-size: 15px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* Process flow */
+  .process-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-top: 48px;
+    width: 100%;
+  }
+
+  .process-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+  }
+
+  .process-step .step-number {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    font-weight: 800;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 14px;
+    box-shadow: 0 0 24px var(--accent-glow);
+  }
+
+  .process-step h4 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .process-step p {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    padding: 0 8px;
+  }
+
+  .process-arrow {
+    width: 40px;
+    flex-shrink: 0;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 20px;
+  }
+
+  /* Table */
+  .criteria-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 36px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .criteria-table th,
+  .criteria-table td {
+    padding: 18px 24px;
+    text-align: center;
+    font-size: 15px;
+  }
+
+  .criteria-table thead th {
+    background: var(--bg-card);
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .criteria-table tbody td {
+    background: rgba(19, 19, 26, 0.6);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .criteria-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .criteria-table td:first-child {
+    font-weight: 700;
+    text-align: left;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .badge.kill { background: var(--red-bg); color: var(--red); }
+  .badge.grey { background: var(--orange-bg); color: var(--orange); }
+  .badge.go { background: var(--green-bg); color: var(--green); }
+
+  /* Decision rules */
+  .decision-rules {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 36px;
+    width: 100%;
+  }
+
+  .decision-rule {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 24px;
+  }
+
+  .decision-rule .combo {
+    display: flex;
+    gap: 8px;
+    min-width: 220px;
+  }
+
+  .decision-rule .result {
+    font-weight: 600;
+    font-size: 15px;
+    flex: 1;
+  }
+
+  .dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .dot.go { background: var(--green); box-shadow: 0 0 8px rgba(0, 230, 118, 0.4); }
+  .dot.grey { background: var(--orange); box-shadow: 0 0 8px rgba(255, 145, 0, 0.4); }
+  .dot.kill { background: var(--red); box-shadow: 0 0 8px rgba(255, 82, 82, 0.4); }
+
+  /* Stack */
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 36px;
+    width: 100%;
+  }
+
+  .stack-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .stack-item .stack-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+
+  .stack-item h4 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .stack-item p {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* Big number */
+  .big-number {
+    font-size: 120px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent-light), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+
+  .big-number-label {
+    font-size: 24px;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-top: 8px;
+  }
+
+  /* Timeline */
+  .timeline {
+    display: flex;
+    gap: 0;
+    margin-top: 40px;
+    width: 100%;
+    position: relative;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    top: 28px;
+    left: 40px;
+    right: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    border-radius: 2px;
+  }
+
+  .timeline-item {
+    flex: 1;
+    text-align: center;
+    position: relative;
+  }
+
+  .timeline-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin: 20px auto 16px;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 0 16px var(--accent-glow);
+  }
+
+  .timeline-item:last-child .timeline-dot {
+    background: var(--green);
+    box-shadow: 0 0 16px rgba(0, 230, 118, 0.3);
+  }
+
+  .timeline-item h4 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .timeline-item p {
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 0 12px;
+    line-height: 1.5;
+  }
+
+  /* CTA slide */
+  .cta-text {
+    font-size: 28px;
+    color: var(--text-muted);
+    text-align: center;
+    max-width: 700px;
+    line-height: 1.6;
+    margin-top: 24px;
+  }
+
+  /* Navigation */
+  .nav {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    z-index: 100;
+    background: rgba(19, 19, 26, 0.8);
+    backdrop-filter: blur(12px);
+    padding: 10px 20px;
+    border-radius: 40px;
+    border: 1px solid var(--border);
+  }
+
+  .nav-dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .nav-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .nav-dot.active {
+    background: var(--accent-light);
+    width: 24px;
+    border-radius: 4px;
+  }
+
+  .nav-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s ease;
+  }
+
+  .nav-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .slide-counter {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text-dim);
+    min-width: 50px;
+    text-align: center;
+  }
+
+  /* Full-width slide variant */
+  .slide.full-left {
+    align-items: flex-start;
+  }
+
+  .slide.full-left h2 {
+    text-align: left;
+  }
+
+  /* Pill list */
+  .pill-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .pill {
+    padding: 8px 18px;
+    border-radius: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+
+  /* Experiment format */
+  .format-blocks {
+    display: flex;
+    gap: 16px;
+    margin-top: 40px;
+    width: 100%;
+  }
+
+  .format-block {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .format-block::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+  }
+
+  .format-block:nth-child(1)::before { background: var(--accent); }
+  .format-block:nth-child(2)::before { background: #4facfe; }
+  .format-block:nth-child(3)::before { background: var(--green); }
+
+  .format-block .format-icon {
+    font-size: 40px;
+    margin-bottom: 16px;
+  }
+
+  .format-block h4 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .format-block p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .format-connector {
+    display: flex;
+    align-items: center;
+    color: var(--text-dim);
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  /* Emphasis block */
+  .emphasis {
+    background: linear-gradient(135deg, rgba(108,92,231,0.1), rgba(79,172,254,0.1));
+    border: 1px solid rgba(108,92,231,0.2);
+    border-radius: 16px;
+    padding: 32px 40px;
+    margin-top: 32px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .emphasis p {
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1.6;
+  }
+
+  .emphasis .em-highlight {
+    color: var(--accent-light);
+    font-weight: 700;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .slide { padding: 40px 32px; }
+    h1 { font-size: 48px; }
+    h2 { font-size: 36px; }
+    .cards-3, .cards-4, .stack-grid { grid-template-columns: 1fr; }
+    .format-blocks { flex-direction: column; }
+    .format-connector { justify-content: center; }
+    .process-flow { flex-direction: column; gap: 8px; }
+    .process-arrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- SLIDE 1: Title -->
+  <div class="slide active" data-slide="0">
+    <div class="bg-gradient purple"></div>
+    <div class="bg-gradient blue"></div>
+    <span class="slide-label animate">Galactic Gather 2026</span>
+    <h1 class="animate">DotWorld<br><span class="highlight">Experiments</span></h1>
+    <p class="subtitle animate">Incuber, tester, valider. La machine a lancer des SaaS en quelques semaines.</p>
+  </div>
+
+  <!-- SLIDE 2: Why now -->
+  <div class="slide" data-slide="1">
+    <div class="bg-gradient purple" style="top:50%;left:-200px;"></div>
+    <div class="slide-content">
+      <span class="slide-label animate">Le constat</span>
+      <h2 class="animate">Le marche SaaS change.<br>On doit changer avec lui.</h2>
+      <div class="cards cards-3 animate" style="margin-top: 36px;">
+        <div class="card">
+          <span class="card-icon">&#9889;</span>
+          <h3>Vitesse du marche</h3>
+          <p>Les cycles se raccourcissent. Ce qui marchait il y a 12 mois est deja commoditise.</p>
+        </div>
+        <div class="card">
+          <span class="card-icon">&#129302;</span>
+          <h3>L'IA change la donne</h3>
+          <p>Design, dev, marketing : l'IA permet de tester des idees 10x plus vite qu'avant.</p>
+        </div>
+        <div class="card">
+          <span class="card-icon">&#127919;</span>
+          <h3>PMF avant tout</h3>
+          <p>Plutot que scaler a l'aveugle, on valide le product-market fit avec un budget maitrise.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: What is it -->
+  <div class="slide" data-slide="2">
+    <div class="bg-gradient green-bg"></div>
+    <div class="slide-content">
+      <span class="slide-label animate">La vision</span>
+      <h2 class="animate">Un programme d'incubation interne</h2>
+      <p class="subtitle animate" style="text-align:left;max-width:100%;margin-top:24px;font-size:18px;">
+        DotWorld Experiments est notre capacite a <strong style="color:var(--accent-light)">tester de nouvelles verticales SaaS</strong> en parallele des produits principaux. L'equipe existante conçoit, construit et lance des micro-SaaS sur le marche en quelques semaines.
+      </p>
+      <div class="emphasis animate">
+        <p>Objectif : trouver le <span class="em-highlight">product-market fit</span> avant de scaler. Pas d'intuition, que de la <span class="em-highlight">data</span>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: The format -->
+  <div class="slide" data-slide="3">
+    <div class="bg-gradient purple" style="right:auto;left:-100px;top:-100px;"></div>
+    <div class="slide-content">
+      <span class="slide-label animate">Le format</span>
+      <h2 class="animate">Chaque experience, meme recette</h2>
+      <div class="format-blocks animate">
+        <div class="format-block">
+          <div class="format-icon">&#128196;</div>
+          <h4>Landing Page</h4>
+          <p>Une page de vente convaincante, construite rapidement avec l'IA et nos design systems.</p>
+        </div>
+        <div class="format-connector">&rarr;</div>
+        <div class="format-block">
+          <div class="format-icon">&#128179;</div>
+          <h4>Tunnel de Paiement</h4>
+          <p>Un tunnel fonctionnel pour mesurer la vraie conversion : qui sort sa carte ?</p>
+        </div>
+        <div class="format-connector">&rarr;</div>
+        <div class="format-block">
+          <div class="format-icon">&#128640;</div>
+          <h4>Acquisition Payante</h4>
+          <p>10K&#8364; de budget pub pour generer du trafic qualifie et mesurer le CPA reel.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: Process -->
+  <div class="slide" data-slide="4">
+    <div class="bg-gradient blue" style="top:-100px;left:50%;"></div>
+    <div class="slide-content">
+      <span class="slide-label animate">Le process</span>
+      <h2 class="animate">De l'idee au marche en 3 semaines</h2>
+      <div class="process-flow animate">
+        <div class="process-step">
+          <div class="step-number">1</div>
+          <h4>Ideation</h4>
+          <p>Identification d'une verticale, recherche marche, validation du concept</p>
+        </div>
+        <div class="process-arrow">&rarr;</div>
+        <div class="process-step">
+          <div class="step-number">2</div>
+          <h4>Design</h4>
+          <p>Branding, LP, tunnel conçus avec l'IA en quelques jours</p>
+        </div>
+        <div class="process-arrow">&rarr;</div>
+        <div class="process-step">
+          <div class="step-number">3</div>
+          <h4>Dev</h4>
+          <p>Build rapide avec notre stack, deploiement automatise</p>
+        </div>
+        <div class="process-arrow">&rarr;</div>
+        <div class="process-step">
+          <div class="step-number">4</div>
+          <h4>Lancement</h4>
+          <p>Acquisition payante, tracking des KPIs en temps reel</p>
+        </div>
+        <div class="process-arrow">&rarr;</div>
+        <div class="process-step">
+          <div class="step-number">5</div>
+          <h4>Decision</h4>
+          <p>Go/Kill base sur les metriques. Data-driven, zero ego.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: Budget -->
+  <div class="slide" data-slide="5">
+    <div class="bg-gradient purple"></div>
+    <div class="slide-content" style="text-align:center;">
+      <span class="slide-label animate">Le budget</span>
+      <div class="big-number animate">10K&#8364;</div>
+      <p class="big-number-label animate">de depense publicitaire par experience</p>
+      <div class="emphasis animate" style="max-width:700px;margin:32px auto 0;">
+        <p>Le reste &mdash; temps equipe, design, dev &mdash; est absorbe par les <span class="em-highlight">ressources internes</span>. On maximise l'apprentissage, on minimise le risque financier.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: Go/Kill Criteria -->
+  <div class="slide full-left" data-slide="6">
+    <div class="bg-gradient green-bg"></div>
+    <div class="slide-content">
+      <span class="slide-label animate">Framework Go/Kill</span>
+      <h2 class="animate">2 metriques. 1 decision.</h2>
+      <table class="criteria-table animate">
+        <thead>
+          <tr>
+            <th style="text-align:left">Critere</th>
+            <th><span class="badge kill">Kill</span></th>
+            <th><span class="badge grey">Zone grise</span></th>
+            <th><span class="badge go">Go</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>CPA</strong> (Cout par acquisition)</td>
+            <td>&gt; 35&#8364;</td>
+            <td>25&#8364; &ndash; 35&#8364;</td>
+            <td>&lt; 25&#8364;</td>
+          </tr>
+          <tr>
+            <td><strong>Trial-to-first-rebill</strong></td>
+            <td>&lt; 35%</td>
+            <td>35% &ndash; 45%</td>
+            <td>&ge; 45%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: Decision rules -->
+  <div class="slide full-left" data-slide="7">
+    <div class="bg-gradient purple" style="top:auto;bottom:-200px;right:auto;left:50%;"></div>
+    <div class="slide-content">
+      <span class="slide-label animate">Regles de decision</span>
+      <h2 class="animate">Pas de debat. Un systeme.</h2>
+      <div class="decision-rules">
+        <div class="decision-rule animate">
+          <div class="combo"><span class="dot go"></span><span class="dot go"></span></div>
+          <div class="result" style="color:var(--green);">&#10140; Scale en Q3</div>
+        </div>
+        <div class="decision-rule animate">
+          <div class="combo"><span class="dot go"></span><span class="dot grey"></span></div>
+          <div class="result" style="color:var(--green);">&#10140; Scale avec ajustements</div>
+        </div>
+        <div class="decision-rule animate">
+          <div class="combo"><span class="dot go"></span><span class="dot kill"></span></div>
+          <div class="result" style="color:var(--orange);">&#10140; Extension du test +5K&#8364; (une fois)</div>
+        </div>
+        <div class="decision-rule animate">
+          <div class="combo"><span class="dot grey"></span><span class="dot grey"></span></div>
+          <div class="result" style="color:var(--orange);">&#10140; Extension du test +5K&#8364; (une fois)</div>
+        </div>
+        <div class="decision-rule animate">
+          <div class="combo"><span class="dot grey"></span><span class="dot kill"></span></div>
+          <div class="result" style="color:var(--red);">&#10140; Kill le projet</div>
+        </div>
+        <div class="decision-rule animate">
+          <div class="combo"><span class="dot kill"></span><span class="dot kill"></span></div>
+          <div class="result" style="color:var(--red);">&#10140; Kill le projet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: Stack & Tools -->
+  <div class="slide full-left" data-slide="8">
+    <div class="bg-gradient blue" style="top:-100px;right:-100px;"></div>
+    <div class="slide-content">
+      <span class="slide-label animate">La stack</span>
+      <h2 class="animate">Les outils qui rendent ça possible</h2>
+      <div class="stack-grid animate">
+        <div class="stack-item">
+          <span class="stack-icon">&#129302;</span>
+          <div>
+            <h4>IA Generative</h4>
+            <p>Claude, Midjourney, Cursor pour accelerer design, copywriting et dev</p>
+          </div>
+        </div>
+        <div class="stack-item">
+          <span class="stack-icon">&#127912;</span>
+          <div>
+            <h4>Design System</h4>
+            <p>Composants reutilisables pour builder des LP en heures, pas en semaines</p>
+          </div>
+        </div>
+        <div class="stack-item">
+          <span class="stack-icon">&#9889;</span>
+          <div>
+            <h4>CI/CD & Infra</h4>
+            <p>Deploiement automatise, preview environments, monitoring integre</p>
+          </div>
+        </div>
+        <div class="stack-item">
+          <span class="stack-icon">&#128200;</span>
+          <div>
+            <h4>Analytics</h4>
+            <p>Tracking CPA, conversion, retention en temps reel sur chaque experience</p>
+          </div>
+        </div>
+        <div class="stack-item">
+          <span class="stack-icon">&#128179;</span>
+          <div>
+            <h4>Paiement</h4>
+            <p>Tunnels Stripe pre-configures avec gestion trials et rebill automatique</p>
+          </div>
+        </div>
+        <div class="stack-item">
+          <span class="stack-icon">&#128227;</span>
+          <div>
+            <h4>Acquisition</h4>
+            <p>Meta Ads, Google Ads avec templates et automatisations de campagnes</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: Timeline -->
+  <div class="slide" data-slide="9">
+    <div class="bg-gradient green-bg"></div>
+    <div class="slide-content">
+      <span class="slide-label animate">Roadmap</span>
+      <h2 class="animate" style="text-align:center;">Le plan d'execution</h2>
+      <div class="timeline animate">
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <h4>Q2 2026</h4>
+          <p>Setup du framework, premiere experience lancee</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <h4>Q2-Q3 2026</h4>
+          <p>3-4 experiences en parallele, premieres decisions Go/Kill</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <h4>Q3 2026</h4>
+          <p>Scale des experiences validees, nouvelles iterations</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <h4>Q4 2026</h4>
+          <p>Pipeline continu d'experimentation, machine rodee</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 11: CTA -->
+  <div class="slide" data-slide="10">
+    <div class="bg-gradient purple"></div>
+    <div class="bg-gradient blue"></div>
+    <span class="slide-label animate">Et maintenant ?</span>
+    <h1 class="animate" style="font-size:56px;">On <span class="highlight">experimente</span>.<br>On <span class="highlight">mesure</span>.<br>On <span class="highlight">decide</span>.</h1>
+    <p class="cta-text animate">Chaque idee merite d'etre testee. Aucune ne merite d'etre scalee sans preuve.</p>
+    <div class="pill-list animate" style="margin-top:32px;">
+      <span class="pill">&#128161; Tu as une idee de verticale ?</span>
+      <span class="pill">&#128200; Tu veux contribuer au tracking ?</span>
+      <span class="pill">&#128640; Tu veux rejoindre une experience ?</span>
+    </div>
+    <p class="subtitle animate" style="margin-top:24px;font-size:16px;color:var(--text-dim);">Parlons-en.</p>
+  </div>
+
+</div>
+
+<!-- Navigation -->
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" aria-label="Previous">&larr;</button>
+  <div class="nav-dots" id="navDots"></div>
+  <span class="slide-counter" id="counter">1 / 11</span>
+  <button class="nav-btn" id="nextBtn" aria-label="Next">&rarr;</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  let current = 0;
+
+  // Build nav dots
+  const dotsContainer = document.getElementById('navDots');
+  for (let i = 0; i < totalSlides; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    dot.addEventListener('click', () => goTo(i));
+    dotsContainer.appendChild(dot);
+  }
+
+  function goTo(index) {
+    if (index < 0 || index >= totalSlides) return;
+    slides[current].classList.remove('active');
+    // Reset animations
+    slides[current].querySelectorAll('.animate').forEach(el => {
+      el.style.animation = 'none';
+      el.offsetHeight;
+      el.style.animation = '';
+    });
+    current = index;
+    slides[current].classList.add('active');
+    // Update dots
+    document.querySelectorAll('.nav-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === current);
+    });
+    document.getElementById('counter').textContent = `${current + 1} / ${totalSlides}`;
+  }
+
+  document.getElementById('prevBtn').addEventListener('click', () => goTo(current - 1));
+  document.getElementById('nextBtn').addEventListener('click', () => goTo(current + 1));
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(current - 1); }
+  });
+
+  // Touch support
+  let touchStartX = 0;
+  document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', (e) => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      diff > 0 ? goTo(current + 1) : goTo(current - 1);
+    }
+  });
+</script>
+
+</body>
+</html>
