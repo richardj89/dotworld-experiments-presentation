@@ -985,7 +985,7 @@
     dotsContainer.appendChild(dot);
   }
 
-  function goTo(index) {
+  function goTo(index, pushState = true) {
     if (index < 0 || index >= totalSlides) return;
     slides[current].classList.remove('active');
     // Reset animations
@@ -1001,7 +1001,27 @@
       d.classList.toggle('active', i === current);
     });
     document.getElementById('counter').textContent = `${current + 1} / ${totalSlides}`;
+    // Update URL without reload
+    if (pushState) {
+      history.pushState({ slide: current }, '', `#${current + 1}`);
+    }
   }
+
+  // Read initial slide from URL hash
+  const initialSlide = parseInt(location.hash.replace('#', ''), 10);
+  if (initialSlide >= 1 && initialSlide <= totalSlides) {
+    goTo(initialSlide - 1, false);
+  }
+
+  // Handle browser back/forward
+  window.addEventListener('popstate', (e) => {
+    if (e.state && typeof e.state.slide === 'number') {
+      goTo(e.state.slide, false);
+    } else {
+      const s = parseInt(location.hash.replace('#', ''), 10);
+      if (s >= 1 && s <= totalSlides) goTo(s - 1, false);
+    }
+  });
 
   document.getElementById('prevBtn').addEventListener('click', () => goTo(current - 1));
   document.getElementById('nextBtn').addEventListener('click', () => goTo(current + 1));
